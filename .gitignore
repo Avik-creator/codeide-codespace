@@ -1,0 +1,15 @@
+proxy-server/node_modules
+proxy-server/.env
+proxy-server/.env.local
+proxy-server/.env.development
+proxy-server/.env.test
+proxy-server/.env.production
+proxy-server/.env.staging
+
+codeide-container/.env
+codeide-container/.env.local
+codeide-container/.env.development
+codeide-container/.env.test
+codeide-container/.env.production
+codeide-container/node_modules
+codeide-container/.next
