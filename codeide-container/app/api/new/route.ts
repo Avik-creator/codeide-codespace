@@ -1,4 +1,4 @@
-import Docker from "dockerode";
+import Docker, { Network } from "dockerode";
 import os from "os";
 
 const POST_TO_CONTAINER: {
@@ -56,6 +56,7 @@ export async function POST(request: Request) {
             {
               HostIp: "127.0.0.1",
               HostPort: availablePort.toString(),
+              Network: "codeide-network",
             },
           ],
         },
