@@ -1,32 +1,64 @@
-import { login } from "@/action/User";
+import { register } from "@/action/User";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { getSession } from "@/lib/getSession";
+
 import { CodeIcon } from "lucide-react";
 
-const Login = async () => {
-  const session = await getSession();
-  const user = session?.user;
-  if (user) redirect("/");
-
+const Register = async () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 px-4">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <CodeIcon className="mx-auto h-12 w-12 text-primary" />
           <h2 className="mt-6 text-3xl font-extrabold text-gray-900 dark:text-white">Welcome to CodeIDE</h2>
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">Sign in to your account</p>
+          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">Create your account</p>
         </div>
         <div className="mt-8 bg-white dark:bg-gray-800 py-8 px-4 shadow sm:rounded-lg sm:px-10">
           <form
             className="space-y-6"
             action={async formData => {
               "use server";
-              await login(formData);
+              await register(formData);
             }}
           >
+            <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
+              <div>
+                <Label htmlFor="firstName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  First Name
+                </Label>
+                <div className="mt-1">
+                  <Input
+                    id="firstName"
+                    name="firstname"
+                    type="text"
+                    autoComplete="given-name"
+                    required
+                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                    placeholder="Tyler"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="lastName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Last Name
+                </Label>
+                <div className="mt-1">
+                  <Input
+                    id="lastName"
+                    name="lastname"
+                    type="text"
+                    autoComplete="family-name"
+                    required
+                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                    placeholder="Durden"
+                  />
+                </div>
+              </div>
+            </div>
+
             <div>
               <Label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
                 Email Address
@@ -53,10 +85,10 @@ const Login = async () => {
                   id="password"
                   name="password"
                   type="password"
-                  autoComplete="current-password"
+                  autoComplete="new-password"
                   required
                   className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
-                  placeholder="*************"
+                  placeholder="***********"
                 />
               </div>
             </div>
@@ -66,7 +98,7 @@ const Login = async () => {
                 type="submit"
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
               >
-                Sign in
+                Sign up
               </button>
             </div>
           </form>
@@ -83,9 +115,9 @@ const Login = async () => {
 
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Don't have an account?{" "}
-                <Link href="/register" className="font-medium text-primary hover:text-primary-dark">
-                  Register here
+                Already have an account?{" "}
+                <Link href="/" className="font-medium text-primary hover:text-primary-dark">
+                  Sign in
                 </Link>
               </p>
             </div>
@@ -96,4 +128,4 @@ const Login = async () => {
   );
 };
 
-export default Login;
+export default Register;
