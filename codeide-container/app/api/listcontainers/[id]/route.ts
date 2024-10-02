@@ -2,6 +2,7 @@ import Docker from "dockerode";
 import mongoose from "mongoose";
 import { Container } from "@/models/container"; // Adjust the import path as needed
 import connectDB from "@/lib/db";
+import { ContainerType } from "@/types";
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   const docker = new Docker();
@@ -37,10 +38,6 @@ export async function GET(request: Request, { params }: { params: { id: string }
     }
 
     // Extract container IDs from the user's container array
-    interface ContainerType {
-      containerId: string;
-      name?: string;
-    }
 
     const userContainerIds = userContainerDoc.containers.map((container: ContainerType) => container.containerId);
 

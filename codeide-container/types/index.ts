@@ -20,3 +20,8 @@ export interface Containers {
   name: string;
   User: UserType;
 }
+
+export interface ContainerType {
+  containerId: string;
+  name?: string;
+}
