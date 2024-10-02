@@ -15,8 +15,6 @@ const server = http.createServer((req, res) => {
     // Extract the subdomain from the request URL
     const subdomain = req.headers.host.split(".")[0];
 
-    console.log("Subdomain:", subdomain);
-
     // Extract the port number from the subdomain
     const port = parseInt(subdomain.split("-")[1]) || DEFAULT_PORT;
 

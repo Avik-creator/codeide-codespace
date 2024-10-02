@@ -24,9 +24,9 @@ export async function login(formData: FormData): Promise<void> {
 }
 
 export const register = async (formData: FormData) => {
-  const { email, password, firstName, lastName } = signUpSchema.parse({
-    firstname: formData.get("firstname"),
-    lastname: formData.get("lastname"),
+  const { firstName, lastName, email, password } = signUpSchema.parse({
+    firstName: formData.get("firstName"),
+    lastName: formData.get("lastName"),
     email: formData.get("email"),
     password: formData.get("password"),
   });

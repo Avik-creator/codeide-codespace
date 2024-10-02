@@ -31,7 +31,6 @@ export async function POST(request: Request, { params }: { params: { id: string 
       success: true,
     });
   } catch (error) {
-    console.log(error);
     return Response.json({
       success: false,
       error: error,
@@ -41,17 +40,36 @@ export async function POST(request: Request, { params }: { params: { id: string 
 
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {
   const docker = new Docker();
+  const containerId = params.id;
 
   try {
-    await docker.getContainer(params.id).remove();
+    // Get the container
+    const container = docker.getContainer(containerId);
+
+    // Get container info to retrieve the image ID
+
+    // Stop the container if it's running
+    await container.stop().catch(() => {
+      console.log("Error in Stopping the Container");
+    });
+
+    // Remove the container
+    await container.remove({ force: true });
+
+    // Remove the image
+
     return Response.json({
       success: true,
+      message: "Container and image removed successfully",
     });
   } catch (error) {
-    console.log(error);
-    return Response.json({
-      success: false,
-      error: error,
-    });
+    console.error("Error during deletion:", error);
+    return Response.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "An unknown error occurred",
+      },
+      { status: 500 }
+    );
   }
 }

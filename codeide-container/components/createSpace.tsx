@@ -1,12 +1,20 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { DialogClose, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import Link from "next/link";
 import { ResponseNewSpace } from "@/types";
+import { getSession } from "@/lib/getSession";
 
 const CreateSpace = ({ onSuccess }: { onSuccess: () => void }) => {
   const [name, setName] = useState("");
+  const [session, setSession] = useState<{
+    user: {
+      name: string;
+      email: string;
+      id?: string;
+    };
+  } | null>(null);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [responseData, setResponseData] = useState<{
@@ -14,6 +22,23 @@ const CreateSpace = ({ onSuccess }: { onSuccess: () => void }) => {
     password: string;
     id: string;
   } | null>(null);
+
+  useEffect(() => {
+    async function fetchSession() {
+      const session1 = await getSession();
+
+      if (session1) {
+        setSession({
+          user: {
+            name: session1.user?.name as string,
+            email: session1?.user?.email as string,
+            id: session1?.user?.id as string,
+          },
+        });
+      }
+    }
+    fetchSession();
+  }, []);
 
   const createSpace = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -30,11 +55,11 @@ const CreateSpace = ({ onSuccess }: { onSuccess: () => void }) => {
 
       const response = await fetch("/api/new", {
         method: "POST",
-        body: JSON.stringify({ name: name }),
+        body: JSON.stringify({ name: name, userId: session?.user.id }),
       });
 
       const responseData: ResponseNewSpace = await response.json();
-      console.log("responseData", responseData);
+
       const { data, error } = responseData;
       if (error) {
         setError(error);

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/getSession";
 import { CodeIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const Login = async () => {
   const session = await getSession();
@@ -62,12 +63,15 @@ const Login = async () => {
             </div>
 
             <div>
-              <button
+              {/* <button
                 type="submit"
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
               >
                 Sign in
-              </button>
+              </button> */}
+              <Button type="submit" className="w-full flex justify-center">
+                Sign In
+              </Button>
             </div>
           </form>
 
@@ -83,7 +87,7 @@ const Login = async () => {
 
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Don't have an account?{" "}
+                Don&apos;t have an account?{" "}
                 <Link href="/register" className="font-medium text-primary hover:text-primary-dark">
                   Register here
                 </Link>

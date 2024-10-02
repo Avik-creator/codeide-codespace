@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import Link from "next/link";
 
 import { CodeIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const Register = async () => {
   return (
@@ -31,7 +32,7 @@ const Register = async () => {
                 <div className="mt-1">
                   <Input
                     id="firstName"
-                    name="firstname"
+                    name="firstName"
                     type="text"
                     autoComplete="given-name"
                     required
@@ -48,7 +49,7 @@ const Register = async () => {
                 <div className="mt-1">
                   <Input
                     id="lastName"
-                    name="lastname"
+                    name="lastName"
                     type="text"
                     autoComplete="family-name"
                     required
@@ -94,12 +95,16 @@ const Register = async () => {
             </div>
 
             <div>
-              <button
+              {/* <button
                 type="submit"
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
               >
                 Sign up
-              </button>
+              </button> */}
+
+              <Button type="submit" className="w-full flex justify-center">
+                Sign Up
+              </Button>
             </div>
           </form>
 

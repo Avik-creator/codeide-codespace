@@ -31,7 +31,7 @@ export default function SignoutButton() {
   useEffect(() => {
     async function fetchSession() {
       const session1 = await getSession();
-      console.log("Session 1", session1);
+
       if (session1) {
         setSession({
           user: {

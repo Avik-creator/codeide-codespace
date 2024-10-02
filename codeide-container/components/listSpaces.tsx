@@ -27,7 +27,6 @@ const ListSpaces = ({ space, fetchSpaces }: { space: Dockerode.ContainerInfo; fe
         body: JSON.stringify({ action: action }),
       });
       const data = await response.json();
-      console.log(data);
       if (data.success) {
         fetchSpaces();
       }
