@@ -1,6 +1,7 @@
 import Docker from "dockerode";
 import mongoose from "mongoose";
 import { Container } from "@/models/container"; // Adjust the import path as needed
+import connectDB from "@/lib/db";
 
 export async function GET(request: Request, { params }: { params: { id: string } }) {
   const docker = new Docker();
@@ -17,20 +18,33 @@ export async function GET(request: Request, { params }: { params: { id: string }
   }
 
   try {
-    // Fetch container IDs from MongoDB for the specific user
-    const userContainers = await Container.find({ user: userId }).select("containerId name");
-    if (!userContainers || userContainers.length === 0) {
+    await connectDB();
+    // Fetch container details from MongoDB for the specific user
+    const userContainerDoc = await Container.findOne({ user: userId }).select("containers");
+
+    const userContainerLength = await Container.findOne({ user: userId }).select("numberOfContainers");
+
+    if (!userContainerDoc || userContainerDoc.containers.length === 0) {
       return Response.json(
         {
-          success: false,
+          success: true,
+          data: [],
+          numberOfContainer: userContainerLength,
           error: "No containers found for the user",
         },
-        { status: 400 }
+        { status: 200 }
       );
     }
-    const userContainerIds = userContainers.map(container => container.containerId);
 
-    // Fetch containers from Docker
+    // Extract container IDs from the user's container array
+    interface ContainerType {
+      containerId: string;
+      name?: string;
+    }
+
+    const userContainerIds = userContainerDoc.containers.map((container: ContainerType) => container.containerId);
+
+    // Fetch containers from Docker using the container IDs
     const dockerContainers = await docker.listContainers({
       all: true,
       filters: {
@@ -39,9 +53,9 @@ export async function GET(request: Request, { params }: { params: { id: string }
       },
     });
 
-    // Combine Docker container info with database info
+    // Combine Docker container info with database container info
     const containersWithDetails = dockerContainers.map(dockerContainer => {
-      const dbContainer = userContainers.find(c => c.containerId === dockerContainer.Id);
+      const dbContainer = userContainerDoc.containers.find((c: ContainerType) => c.containerId === dockerContainer.Id);
       return {
         ...dockerContainer,
         name: dbContainer ? dbContainer.name : null,
@@ -51,8 +65,10 @@ export async function GET(request: Request, { params }: { params: { id: string }
     return Response.json({
       success: true,
       data: containersWithDetails,
+      numberOfContainer: userContainerLength,
     });
   } catch (error) {
+    console.error("Error fetching containers:", error);
     return Response.json(
       {
         success: false,
