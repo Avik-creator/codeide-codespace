@@ -13,14 +13,8 @@ const containerSchema = new mongoose.Schema({
     type: Number,
     default: 0,
     required: true,
-    max: 5,
-    validate: {
-      validator: function (value: number) {
-        return value <= 5;
-      },
-      message: "Value cannot exceed 5",
-    },
   },
+  maximumContainers: { type: Number, default: 5, required: true },
 });
 
 export const Container = mongoose.models?.Container || mongoose.model("Container", containerSchema);

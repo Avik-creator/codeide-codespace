@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 const Login = async () => {
   const session = await getSession();
   const user = session?.user;
-  if (user) redirect("/");
+  if (user) redirect("/dashboard");
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 px-4">

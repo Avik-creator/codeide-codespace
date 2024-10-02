@@ -14,7 +14,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import Dockerode from "dockerode";
 
-const MAX_SPACES = 5;
+let MAX_SPACES: number;
 
 export default function Dashboard() {
   const [spaces, setSpaces] = useState<Dockerode.ContainerInfo[] | []>([]);
@@ -54,8 +54,10 @@ export default function Dashboard() {
     try {
       const response = await fetch(`/api/listcontainers/${session.user.id}`);
       const data = await response.json();
+      console.log("Data:", data);
 
-      setNumberOfSContainers(data.numberOfContainer.numberOfContainers);
+      MAX_SPACES = data.maximumContainers;
+      setNumberOfSContainers(data.numberOfContainer);
       setSpaces(data.data || []);
     } catch (error) {
       console.error("Error fetching spaces:", error);

@@ -21,16 +21,19 @@ export async function GET(request: Request, { params }: { params: { id: string }
   try {
     await connectDB();
     // Fetch container details from MongoDB for the specific user
-    const userContainerDoc = await Container.findOne({ user: userId }).select("containers");
+    const userContainerDoc = await Container.findOne({ user: userId }).select(
+      "containers numberOfContainers maximumContainers"
+    );
 
-    const userContainerLength = await Container.findOne({ user: userId }).select("numberOfContainers");
-
-    if (!userContainerDoc || userContainerDoc.containers.length === 0) {
+    // If no document found, create a new instance of the model to get default values
+    if (!userContainerDoc) {
+      const defaultDoc = new Container(); // New instance, not saved
       return Response.json(
         {
           success: true,
           data: [],
-          numberOfContainer: userContainerLength,
+          numberOfContainers: defaultDoc.numberOfContainers, // Default value
+          maximumContainers: defaultDoc.maximumContainers, // Default value
           error: "No containers found for the user",
         },
         { status: 200 }
@@ -62,7 +65,8 @@ export async function GET(request: Request, { params }: { params: { id: string }
     return Response.json({
       success: true,
       data: containersWithDetails,
-      numberOfContainer: userContainerLength,
+      numberOfContainer: userContainerDoc.numberOfContainers,
+      maximumContainers: userContainerDoc.maximumContainers,
     });
   } catch (error) {
     console.error("Error fetching containers:", error);
