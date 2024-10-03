@@ -49,7 +49,6 @@ export default function Dashboard() {
     try {
       const response = await fetch(`/api/listcontainers/${session.user.id}`);
       const data = await response.json();
-      console.log("Data:", data);
 
       setSpaces(data.data || []);
     } catch (error) {

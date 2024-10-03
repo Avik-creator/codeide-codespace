@@ -2,12 +2,14 @@ import React, { useEffect, useState } from "react";
 import { DialogClose, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Link from "next/link";
 import { ResponseNewSpace } from "@/types";
 import { getSession } from "@/lib/getSession";
 
 const CreateSpace = ({ onSuccess }: { onSuccess: () => void }) => {
   const [name, setName] = useState("");
+  const [expressServer, setExpressServer] = useState("false");
   const [session, setSession] = useState<{
     user: {
       name: string;
@@ -19,7 +21,7 @@ const CreateSpace = ({ onSuccess }: { onSuccess: () => void }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [responseData, setResponseData] = useState<{
     url: string;
-    password: string;
+    expressPORT: number | null;
     id: string;
   } | null>(null);
 
@@ -49,13 +51,17 @@ const CreateSpace = ({ onSuccess }: { onSuccess: () => void }) => {
       const trimmedName = name.trim();
       const alphanumericRegex = /^[a-zA-Z0-9]+$/;
       if (!alphanumericRegex.test(trimmedName)) {
-        setError("name must contain only letters and numbers.");
+        setError("Name must contain only letters and numbers.");
         return;
       }
 
       const response = await fetch("/api/new", {
         method: "POST",
-        body: JSON.stringify({ name: name, userId: session?.user.id }),
+        body: JSON.stringify({
+          name: name,
+          userId: session?.user.id,
+          expressServer: expressServer === "true",
+        }),
       });
 
       const responseData: ResponseNewSpace = await response.json();
@@ -85,6 +91,11 @@ const CreateSpace = ({ onSuccess }: { onSuccess: () => void }) => {
         <Link href={responseData.url} target="_blank" rel="noreferrer" className="text-blue-500">
           {responseData.url}
         </Link>
+        {expressServer == "true" && (
+          <p>
+            Your Express server is running on port <strong>{responseData.expressPORT}</strong>.
+          </p>
+        )}
       </div>
       <DialogFooter className="sm:justify-end">
         <DialogClose asChild>
@@ -100,8 +111,8 @@ const CreateSpace = ({ onSuccess }: { onSuccess: () => void }) => {
         <DialogTitle>Create new codespace</DialogTitle>
         <DialogDescription>Create a new codespace with a specific configuration.</DialogDescription>
       </DialogHeader>
-      <div className="flex  items-center space-x-2">
-        <div className="w-full my-4 space-y-4">
+      <div className="flex flex-col space-y-4">
+        <div className="w-full space-y-2">
           <label htmlFor="name">Name Your Space:</label>
           <p className="text-xs">Please make sure your name is unique.</p>
           <Input
@@ -113,8 +124,20 @@ const CreateSpace = ({ onSuccess }: { onSuccess: () => void }) => {
             disabled={isLoading}
             required
           />
-          {error && <p className="text-red-500 text-sm">{error}</p>}
         </div>
+        <div className="w-full space-y-2">
+          <label htmlFor="expressServer">Will you create Express Server:</label>
+          <Select onValueChange={setExpressServer} defaultValue={expressServer}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select option" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="true">Yes</SelectItem>
+              <SelectItem value="false">No</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        {error && <p className="text-red-500 text-sm">{error}</p>}
       </div>
       <DialogFooter className="sm:justify-end">
         <DialogClose asChild>
@@ -123,7 +146,7 @@ const CreateSpace = ({ onSuccess }: { onSuccess: () => void }) => {
           </Button>
         </DialogClose>
         <Button disabled={isLoading} type="submit">
-          {isLoading ? "Createing..." : "Create"}
+          {isLoading ? "Creating..." : "Create"}
         </Button>
       </DialogFooter>
     </form>

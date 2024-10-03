@@ -38,6 +38,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
   try {
     if (action === "stop") {
       await docker.getContainer(params.id).stop();
+      await docker.getContainer(params.id);
     } else {
       await docker.getContainer(params.id).start();
     }

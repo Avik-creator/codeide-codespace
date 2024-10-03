@@ -2,6 +2,8 @@ import Docker from "dockerode";
 import { Container } from "@/models/container"; // Adjust the import path as needed
 import connectDB from "@/lib/db";
 
+const backendPort = new Set();
+const expressPORT = new Set();
 // We'll use the database to store port assignments
 async function getAvailablePort() {
   const minPort = 8000;
@@ -20,30 +22,58 @@ async function getAvailablePort() {
   throw new Error("No available ports");
 }
 
+function PORT() {
+  const minPort = 9000;
+  const maxPort = 9999;
+
+  for (let i = minPort; i <= maxPort; i++) {
+    if (!backendPort.has(i)) {
+      backendPort.add(i);
+      return i;
+    }
+  }
+}
+
+function EXPRESSPORT() {
+  const minPort = 3000;
+  const maxPort = 3999;
+
+  for (let i = minPort; i <= maxPort; i++) {
+    if (!expressPORT.has(i)) {
+      expressPORT.add(i);
+      return i;
+    }
+  }
+}
+
 export async function POST(request: Request) {
-  const { name, userId } = await request.json();
+  const { name, userId, expressServer } = await request.json();
   console.log(name, userId);
   const docker = new Docker();
 
   try {
     await connectDB();
 
+    const backendPORT = PORT();
     const availablePort = await getAvailablePort();
 
     const image = docker.getImage("codeide-frontend");
-    if (!image) {
+    const backendImage = docker.getImage("codeide-server");
+    if (!image || !backendImage) {
       await docker.pull("codeide-frontend");
+      await docker.pull("codeide-server");
     }
 
     const container = await docker.createContainer({
       Image: "codeide-frontend",
       name: name,
+      Env: [`NEXT_PUBLIC_BACKEND_PORT=${backendPORT}`],
+
       HostConfig: {
         PortBindings: {
           "3000/tcp": [
             {
-              HostIp: "127.0.0.1",
-              HostPort: availablePort.toString(),
+              HostPort: availablePort.toString(), // Ensure availablePort is a string
               Network: "codeide-network",
             },
           ],
@@ -51,6 +81,33 @@ export async function POST(request: Request) {
       },
     });
 
+    const backendContainer = await docker.createContainer({
+      Image: "codeide-server",
+      name: `${name}-backend`,
+      ExposedPorts: {
+        "9000/tcp": {},
+        ...(expressServer && { "3000/tcp": {} }), // Conditionally expose port 3000
+      },
+      HostConfig: {
+        PortBindings: {
+          "9000/tcp": [
+            {
+              HostPort: String(backendPORT), // Use backendPORT directly, ensure it's a string
+              Network: "codeide-network",
+            },
+          ],
+          ...(expressServer && {
+            "3000/tcp": [
+              {
+                HostPort: String(expressPORT), // Ensure availablePort is a string
+                Network: "codeide-network",
+              },
+            ],
+          }),
+        },
+      },
+    });
+    await backendContainer.start();
     await container.start();
 
     // Fetch the user's container document
@@ -74,7 +131,7 @@ export async function POST(request: Request) {
       existingUserContainer.containers.push({
         containerId: container.id,
         name: name,
-        port: availablePort,
+        backendContainerId: backendContainer.id,
       });
       existingUserContainer.numberOfContainers += 1;
       await existingUserContainer.save();
@@ -83,7 +140,7 @@ export async function POST(request: Request) {
       const newContainer = new Container({
         user: userId,
         containers: [{ containerId: container.id, name: name, port: availablePort }],
-        port: availablePort,
+        backendContainerId: backendContainer.id,
       });
       newContainer.numberOfContainers = 1;
       await newContainer.save();
@@ -95,6 +152,7 @@ export async function POST(request: Request) {
         data: {
           url: `http://${container.id.slice(0, 12)}-${availablePort}.localhost:3005`,
           id: container.id.slice(0, 12),
+          expressPORT: expressServer ? expressPORT : null,
         },
         error: null,
       },
@@ -102,7 +160,8 @@ export async function POST(request: Request) {
         status: 200,
       }
     );
-  } catch {
+  } catch (error) {
+    console.log("An error occurred while creating the container", error);
     const message = "An error occurred while creating the container";
     return Response.json(
       {
