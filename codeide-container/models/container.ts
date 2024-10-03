@@ -6,6 +6,8 @@ const containerSchema = new mongoose.Schema({
       containerId: { type: String, required: true },
       name: { type: String, required: true, unique: true },
       port: { type: Number, required: true },
+      backendPort: { type: Number, required: true },
+      socketPort: { type: Number, required: true },
     },
   ],
   user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },

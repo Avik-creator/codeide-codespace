@@ -9,17 +9,13 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { getSession } from "@/lib/getSession";
-import { Progress } from "@/components/ui/progress";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
-import Dockerode from "dockerode";
 
-let MAX_SPACES: number;
+import Dockerode from "dockerode";
 
 export default function Dashboard() {
   const [spaces, setSpaces] = useState<Dockerode.ContainerInfo[] | []>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [numberOfSContainers, setNumberOfSContainers] = useState(0);
+
   const [session, setSession] = useState<{
     user: {
       name: string;
@@ -27,7 +23,6 @@ export default function Dashboard() {
       id?: string;
     };
   } | null>(null);
-  const [showLimitAlert, setShowLimitAlert] = useState(false);
 
   useEffect(() => {
     async function fetchSession() {
@@ -56,8 +51,6 @@ export default function Dashboard() {
       const data = await response.json();
       console.log("Data:", data);
 
-      MAX_SPACES = data.maximumContainers;
-      setNumberOfSContainers(data.numberOfContainer);
       setSpaces(data.data || []);
     } catch (error) {
       console.error("Error fetching spaces:", error);
@@ -72,16 +65,6 @@ export default function Dashboard() {
     }
   }, [session]);
 
-  const spaceCount = numberOfSContainers;
-
-  const progressPercentage = (spaceCount / MAX_SPACES) * 100;
-
-  const handleCreateSpace = () => {
-    if (numberOfSContainers >= MAX_SPACES) {
-      setShowLimitAlert(true);
-    }
-  };
-
   return (
     <main className="h-screen py-10 mx-10">
       <header className="flex flex-1 justify-between mb-6">
@@ -91,36 +74,16 @@ export default function Dashboard() {
           <SignoutButton />
         </div>
       </header>
-      <div className="mb-6">
-        <Card className="p-4">
-          <div className="flex justify-between items-center mb-2">
-            <p className="text-lg font-medium">Codespace Usage</p>
-            <p className="text-sm">{`${spaceCount}/${MAX_SPACES}`}</p>
-          </div>
-          <Progress value={progressPercentage} className="w-full" />
-        </Card>
-      </div>
       <div>
         <Card className="w-full h-full rounded-lg overflow-hidden">
           <div className="flex justify-between px-4 py-2">
             <p className="leading-7 [&:not(:first-child)]:mt-6">Your codespaces</p>
             <Dialog>
               <DialogTrigger asChild>
-                <Button onClick={handleCreateSpace}>Create new codespace</Button>
+                <Button> Create new codespace</Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-md">
-                {spaceCount < MAX_SPACES ? (
-                  <CreateSpace onSuccess={fetchSpaces} />
-                ) : (
-                  <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Error</AlertTitle>
-                    <AlertDescription>
-                      You have reached the maximum limit of {MAX_SPACES} codespaces. Please delete an existing codespace
-                      to create a new one.
-                    </AlertDescription>
-                  </Alert>
-                )}
+                <CreateSpace onSuccess={fetchSpaces} />
               </DialogContent>
             </Dialog>
           </div>
@@ -137,15 +100,6 @@ export default function Dashboard() {
           </Card>
         </Card>
       </div>
-      {showLimitAlert && (
-        <Alert variant="destructive" className="mt-4">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Limit Reached</AlertTitle>
-          <AlertDescription>
-            You have reached the maximum limit of {MAX_SPACES} codespaces. Please upgrade your plan to create more.
-          </AlertDescription>
-        </Alert>
-      )}
     </main>
   );
 }
