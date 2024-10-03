@@ -2,11 +2,16 @@ import Docker from "dockerode";
 import { Container } from "@/models/container"; // Adjust the import path as needed
 import connectDB from "@/lib/db";
 
+// NEXT_PUBLIC_BACKEND_PORT=9000
+// NEXT_PUBLIC_VITE_PORT=5173
+// NEXT_PUBLIC_EXPRESS_PORT=3001
+
 const backendPort = new Set();
 const expressPORT = new Set();
+const vitePORT = new Set();
 // We'll use the database to store port assignments
 async function getAvailablePort() {
-  const minPort = 8000;
+  const minPort = 8010;
   const maxPort = 8999;
 
   // Get all existing port assignments
@@ -23,7 +28,7 @@ async function getAvailablePort() {
 }
 
 function PORT() {
-  const minPort = 9000;
+  const minPort = 9010;
   const maxPort = 9999;
 
   for (let i = minPort; i <= maxPort; i++) {
@@ -35,7 +40,7 @@ function PORT() {
 }
 
 function EXPRESSPORT() {
-  const minPort = 3000;
+  const minPort = 3010;
   const maxPort = 3999;
 
   for (let i = minPort; i <= maxPort; i++) {
@@ -46,8 +51,20 @@ function EXPRESSPORT() {
   }
 }
 
+function VITEPORT() {
+  const minPort = 5174;
+  const maxPort = 5999;
+
+  for (let i = minPort; i <= maxPort; i++) {
+    if (!vitePORT.has(i)) {
+      vitePORT.add(i);
+      return i;
+    }
+  }
+}
+
 export async function POST(request: Request) {
-  const { name, userId, expressServer } = await request.json();
+  const { name, userId, expressServer, viteServer } = await request.json();
   console.log(name, userId);
   const docker = new Docker();
 
@@ -56,6 +73,8 @@ export async function POST(request: Request) {
 
     const backendPORT = PORT();
     const availablePort = await getAvailablePort();
+    const expressPORT = EXPRESSPORT();
+    const vitePORT = VITEPORT();
 
     const image = docker.getImage("codeide-frontend");
     const backendImage = docker.getImage("codeide-server");
@@ -67,7 +86,11 @@ export async function POST(request: Request) {
     const container = await docker.createContainer({
       Image: "codeide-frontend",
       name: name,
-      Env: [`NEXT_PUBLIC_BACKEND_PORT=${backendPORT}`],
+      Env: [
+        `NEXT_PUBLIC_BACKEND_PORT=${backendPORT}`,
+        ...(expressServer ? [`NEXT_PUBLIC_EXPRESS_PORT=${expressPORT}`] : []),
+        ...(viteServer ? [`NEXT_PUBLIC_VITE_PORT=${vitePORT}`] : []),
+      ],
 
       HostConfig: {
         PortBindings: {
@@ -87,6 +110,7 @@ export async function POST(request: Request) {
       ExposedPorts: {
         "9000/tcp": {},
         ...(expressServer && { "3000/tcp": {} }), // Conditionally expose port 3000
+        ...(viteServer && { "5173/tcp": {} }), // Conditionally expose port 5173
       },
       HostConfig: {
         PortBindings: {
@@ -100,6 +124,14 @@ export async function POST(request: Request) {
             "3000/tcp": [
               {
                 HostPort: String(expressPORT), // Ensure availablePort is a string
+                Network: "codeide-network",
+              },
+            ],
+          }),
+          ...(viteServer && {
+            "5173/tcp": [
+              {
+                HostPort: String(vitePORT), // Ensure availablePort is a string
                 Network: "codeide-network",
               },
             ],
@@ -127,6 +159,8 @@ export async function POST(request: Request) {
         );
       }
 
+      console.log("Adding container to existing user's containers array", backendContainer.id);
+
       // Add the new container to the existing user's containers array
       existingUserContainer.containers.push({
         containerId: container.id,
@@ -139,8 +173,9 @@ export async function POST(request: Request) {
       // Create a new document for the user if it doesn't exist
       const newContainer = new Container({
         user: userId,
-        containers: [{ containerId: container.id, name: name, port: availablePort }],
-        backendContainerId: backendContainer.id,
+        containers: [
+          { containerId: container.id, name: name, port: availablePort, backendContainerId: backendContainer.id },
+        ],
       });
       newContainer.numberOfContainers = 1;
       await newContainer.save();
@@ -151,8 +186,10 @@ export async function POST(request: Request) {
         success: true,
         data: {
           url: `http://${container.id.slice(0, 12)}-${availablePort}.localhost:3005`,
+          backendURL: `http://${backendContainer.id.slice(0, 12)}-${backendPORT}.localhost:3005`,
           id: container.id.slice(0, 12),
           expressPORT: expressServer ? expressPORT : null,
+          vitePORT: viteServer ? vitePORT : null,
         },
         error: null,
       },

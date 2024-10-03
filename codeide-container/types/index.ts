@@ -6,6 +6,7 @@ export interface ResponseNewSpace {
     url: string;
     id: string;
     expressPORT: number | null;
+    vitePORT: number | null;
   } | null;
 }
 

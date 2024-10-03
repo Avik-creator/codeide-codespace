@@ -7,9 +7,10 @@ import Link from "next/link";
 import { ResponseNewSpace } from "@/types";
 import { getSession } from "@/lib/getSession";
 
-const CreateSpace = ({ onSuccess }: { onSuccess: () => void }) => {
+export default function CreateSpace({ onSuccess }: { onSuccess: () => void }) {
   const [name, setName] = useState("");
   const [expressServer, setExpressServer] = useState("false");
+  const [viteServer, setViteServer] = useState("false");
   const [session, setSession] = useState<{
     user: {
       name: string;
@@ -22,6 +23,7 @@ const CreateSpace = ({ onSuccess }: { onSuccess: () => void }) => {
   const [responseData, setResponseData] = useState<{
     url: string;
     expressPORT: number | null;
+    vitePORT: number | null;
     id: string;
   } | null>(null);
 
@@ -61,6 +63,7 @@ const CreateSpace = ({ onSuccess }: { onSuccess: () => void }) => {
           name: name,
           userId: session?.user.id,
           expressServer: expressServer === "true",
+          viteServer: viteServer === "true",
         }),
       });
 
@@ -91,9 +94,15 @@ const CreateSpace = ({ onSuccess }: { onSuccess: () => void }) => {
         <Link href={responseData.url} target="_blank" rel="noreferrer" className="text-blue-500">
           {responseData.url}
         </Link>
-        {expressServer == "true" && (
+        {expressServer === "true" && (
           <p>
             Your Express server is running on port <strong>{responseData.expressPORT}</strong>.
+          </p>
+        )}
+        {viteServer === "true" && (
+          <p>
+            Your Vite server is running on port <strong>{responseData.vitePORT}</strong>. Some Changes that you need to
+            make is to place it in package.json: <strong>&quot;dev&quot;: &quot;vite --host 0.0.0.0&quot;,</strong>
           </p>
         )}
       </div>
@@ -126,8 +135,21 @@ const CreateSpace = ({ onSuccess }: { onSuccess: () => void }) => {
           />
         </div>
         <div className="w-full space-y-2">
-          <label htmlFor="expressServer">Will you create Express Server:</label>
+          <label htmlFor="expressServer">Will you create an Express Server:</label>
           <Select onValueChange={setExpressServer} defaultValue={expressServer}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select option" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="true">Yes</SelectItem>
+              <SelectItem value="false">No</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <p>Select Any One.</p>
+        <div className="w-full space-y-2">
+          <label htmlFor="viteServer">Will you create a Vite Server:</label>
+          <Select onValueChange={setViteServer} defaultValue={viteServer}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select option" />
             </SelectTrigger>
@@ -151,6 +173,4 @@ const CreateSpace = ({ onSuccess }: { onSuccess: () => void }) => {
       </DialogFooter>
     </form>
   );
-};
-
-export default CreateSpace;
+}
