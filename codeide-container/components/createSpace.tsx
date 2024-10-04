@@ -83,6 +83,20 @@ export default function CreateSpace({ onSuccess }: { onSuccess: () => void }) {
     }
   };
 
+  const handleExpressServerChange = (value: string) => {
+    setExpressServer(value);
+    if (value === "true") {
+      setViteServer("false");
+    }
+  };
+
+  const handleViteServerChange = (value: string) => {
+    setViteServer(value);
+    if (value === "true") {
+      setExpressServer("false");
+    }
+  };
+
   return responseData ? (
     <div>
       <DialogHeader>
@@ -136,7 +150,7 @@ export default function CreateSpace({ onSuccess }: { onSuccess: () => void }) {
         </div>
         <div className="w-full space-y-2">
           <label htmlFor="expressServer">Will you create an Express Server:</label>
-          <Select onValueChange={setExpressServer} defaultValue={expressServer}>
+          <Select onValueChange={handleExpressServerChange} value={expressServer}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select option" />
             </SelectTrigger>
@@ -146,11 +160,10 @@ export default function CreateSpace({ onSuccess }: { onSuccess: () => void }) {
             </SelectContent>
           </Select>
         </div>
-        <p>Select Any One.</p>
         <div className="w-full space-y-2">
           <label htmlFor="viteServer">Will you create a Vite Server:</label>
-          <Select onValueChange={setViteServer} defaultValue={viteServer}>
-            <SelectTrigger className="w-full">
+          <Select onValueChange={handleViteServerChange} value={viteServer}>
+            <SelectTrigger className="w-full" disabled={expressServer === "true"}>
               <SelectValue placeholder="Select option" />
             </SelectTrigger>
             <SelectContent>
@@ -159,6 +172,7 @@ export default function CreateSpace({ onSuccess }: { onSuccess: () => void }) {
             </SelectContent>
           </Select>
         </div>
+        <p className="text-sm text-muted-foreground">Select only one server option.</p>
         {error && <p className="text-red-500 text-sm">{error}</p>}
       </div>
       <DialogFooter className="sm:justify-end">
