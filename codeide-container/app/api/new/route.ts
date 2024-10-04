@@ -1,67 +1,57 @@
 import Docker from "dockerode";
 import { Container } from "@/models/container"; // Adjust the import path as needed
 import connectDB from "@/lib/db";
+import { execSync } from "node:child_process";
+
+function getOccupiedPorts() {
+  const occupiedPorts = new Set();
+
+  try {
+    // For Linux or MacOS
+    const result = execSync("netstat -tuln | awk '{print $4}' | grep -Eo '[0-9]+$'").toString();
+    result.split("\n").forEach(port => {
+      if (port) {
+        occupiedPorts.add(parseInt(port, 10));
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching occupied ports:", error);
+  }
+
+  return occupiedPorts;
+}
+
+function allocatePort(minPort: number, maxPort: number) {
+  const occupiedPorts = getOccupiedPorts();
+
+  for (let i = minPort; i <= maxPort; i++) {
+    if (!occupiedPorts.has(i)) {
+      return i;
+    }
+  }
+
+  throw new Error("No available ports in the specified range");
+}
+
+function PORT() {
+  return allocatePort(9010, 9999);
+}
+
+function EXPRESSPORT() {
+  return allocatePort(3010, 3999);
+}
+
+function VITEPORT() {
+  return allocatePort(5174, 5999);
+}
+
+function getAvailablePort() {
+  return allocatePort(3006, 3009);
+}
 
 // NEXT_PUBLIC_BACKEND_PORT=9000
 // NEXT_PUBLIC_VITE_PORT=5173
 // NEXT_PUBLIC_EXPRESS_PORT=3001
-
-const backendPort = new Set();
-const expressPORT = new Set();
-const vitePORT = new Set();
-// We'll use the database to store port assignments
-async function getAvailablePort() {
-  const minPort = 8010;
-  const maxPort = 8999;
-
-  // Get all existing port assignments
-  const containers = await Container.find({}, "containers.port");
-  const usedPorts = new Set(containers.flatMap(c => c.containers.map((container: { port: number }) => container.port)));
-
-  for (let port = minPort; port <= maxPort; port++) {
-    if (!usedPorts.has(port)) {
-      return port;
-    }
-  }
-
-  throw new Error("No available ports");
-}
-
-function PORT() {
-  const minPort = 9010;
-  const maxPort = 9999;
-
-  for (let i = minPort; i <= maxPort; i++) {
-    if (!backendPort.has(i)) {
-      backendPort.add(i);
-      return i;
-    }
-  }
-}
-
-function EXPRESSPORT() {
-  const minPort = 3010;
-  const maxPort = 3999;
-
-  for (let i = minPort; i <= maxPort; i++) {
-    if (!expressPORT.has(i)) {
-      expressPORT.add(i);
-      return i;
-    }
-  }
-}
-
-function VITEPORT() {
-  const minPort = 5174;
-  const maxPort = 5999;
-
-  for (let i = minPort; i <= maxPort; i++) {
-    if (!vitePORT.has(i)) {
-      vitePORT.add(i);
-      return i;
-    }
-  }
-}
 
 export async function POST(request: Request) {
   const { name, userId, expressServer, viteServer } = await request.json();
@@ -173,9 +163,7 @@ export async function POST(request: Request) {
       // Create a new document for the user if it doesn't exist
       const newContainer = new Container({
         user: userId,
-        containers: [
-          { containerId: container.id, name: name, port: availablePort, backendContainerId: backendContainer.id },
-        ],
+        containers: [{ containerId: container.id, name: name, backendContainerId: backendContainer.id }],
       });
       newContainer.numberOfContainers = 1;
       await newContainer.save();

@@ -61,38 +61,65 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
     // Connect to the database
     await connectDB();
 
-    // Get the container
-    const container = docker.getContainer(containerId);
+    // Fetch the document to get both containerId and backendContainerId
+    const userContainer = await Container.findOne(
+      { "containers.containerId": containerId },
+      { "containers.$": 1 } // Only retrieve the matching container's data
+    );
 
-    // Remove the container from Docker
-    try {
-      await container.remove({ force: true });
-    } catch (removeError) {
-      console.error("Error removing Docker container:", removeError);
+    if (!userContainer) {
+      console.error("Container not found in the database");
       return NextResponse.json(
         {
           success: false,
-          message: "Failed to remove Docker container",
+          message: "Container not found in the database",
+        },
+        { status: 404 }
+      );
+    }
+
+    const { containerId: frontendId, backendContainerId } = userContainer.containers[0];
+
+    // Get the containers from Docker
+    const frontendContainer = docker.getContainer(frontendId);
+    const backendContainer = docker.getContainer(backendContainerId);
+
+    // Remove both frontend and backend containers from Docker
+    try {
+      // Remove the frontend container
+      await frontendContainer.remove({ force: true });
+
+      // Remove the backend container
+      if (backendContainerId) {
+        await backendContainer.remove({ force: true });
+      }
+    } catch (removeError) {
+      console.error("Error removing Docker containers:", removeError);
+      return NextResponse.json(
+        {
+          success: false,
+          message: "Failed to remove Docker containers",
           error: removeError instanceof Error ? removeError.message : "Unknown error",
         },
         { status: 500 }
       );
     }
 
-    // If Docker removal was successful, remove it from the database
+    // If Docker removal was successful, remove the containers from the database
     const result = await Container.updateOne(
       { "containers.containerId": containerId },
       {
         $pull: { containers: { containerId: containerId } },
+        $inc: { numberOfContainers: -1 },
       }
     );
 
     if (result.modifiedCount === 0) {
-      console.warn("Container removed from Docker but not found in the database");
+      console.warn("Containers removed from Docker but not found in the database");
       return NextResponse.json(
         {
           success: true,
-          message: "Container removed from Docker but not found in the database",
+          message: "Containers removed from Docker but not found in the database",
         },
         { status: 200 }
       );
@@ -103,7 +130,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
 
     return NextResponse.json({
       success: true,
-      message: "Container removed successfully from both Docker and database",
+      message: "Containers removed successfully from both Docker and database",
     });
   } catch (error) {
     console.error("Error during deletion:", error);
