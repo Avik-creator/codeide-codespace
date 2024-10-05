@@ -1,112 +1,169 @@
+"use client";
+
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { register } from "@/action/User";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-
 import Link from "next/link";
-
 import { CodeIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 
-const Register = async () => {
+import { useToast } from "@/hooks/use-toast";
+import { useRouter } from "next/navigation";
+
+const formSchema = z.object({
+  firstName: z.string().min(2, {
+    message: "First name must be at least 2 characters.",
+  }),
+  lastName: z.string().min(2, {
+    message: "Last name must be at least 2 characters.",
+  }),
+  email: z.string().email({
+    message: "Please enter a valid email address.",
+  }),
+  password: z.string().min(8, {
+    message: "Password must be at least 8 characters long.",
+  }),
+});
+
+export default function Register() {
+  const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      email: "",
+      password: "",
+    },
+  });
+
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append("firstName", values.firstName);
+      formData.append("lastName", values.lastName);
+      formData.append("email", values.email);
+      formData.append("password", values.password);
+      const response = await register(formData);
+
+      if (response?.error) {
+        toast({
+          title: "Error",
+          description: response.error,
+        });
+      } else if (response?.success) {
+        toast({
+          title: "Success",
+          description: "You have been successfully registered",
+        });
+        router.push("/");
+      }
+    } catch {
+      toast({
+        title: "An error occurred",
+        description: "Please try again later.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-black px-4">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <CodeIcon className="mx-auto h-12 w-12 text-primary" />
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900 dark:text-white">Welcome to CodeIDE</h2>
+          <CodeIcon className="mx-auto h-12 w-12 text-primary" aria-hidden="true" />
+          <h1 className="mt-6 text-3xl font-extrabold text-gray-900 dark:text-white">Welcome to CodeIDE</h1>
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">Create your account</p>
         </div>
-        <div className="mt-8 bg-white dark:bg-gray-800 py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form
-            className="space-y-6"
-            action={async formData => {
-              "use server";
-              await register(formData);
-            }}
-          >
-            <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
-              <div>
-                <Label htmlFor="firstName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  First Name
-                </Label>
-                <div className="mt-1">
-                  <Input
-                    id="firstName"
-                    name="firstName"
-                    type="text"
-                    autoComplete="given-name"
-                    required
-                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
-                    placeholder="Tyler"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <Label htmlFor="lastName" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Last Name
-                </Label>
-                <div className="mt-1">
-                  <Input
-                    id="lastName"
-                    name="lastName"
-                    type="text"
-                    autoComplete="family-name"
-                    required
-                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
-                    placeholder="Durden"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Email Address
-              </Label>
-              <div className="mt-1">
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
-                  placeholder="projectmayhem@fc.com"
+        <div className="mt-8 bg-white dark:bg-black py-8 px-4 shadow sm:rounded-lg sm:px-10">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <div className="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="firstName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>First Name</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="Tyler"
+                          className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="lastName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Last Name</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="Durden"
+                          className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
                 />
               </div>
-            </div>
-
-            <div>
-              <Label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Password
-              </Label>
-              <div className="mt-1">
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
-                  placeholder="***********"
-                />
-              </div>
-            </div>
-
-            <div>
-              {/* <button
-                type="submit"
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
-              >
-                Sign up
-              </button> */}
-
-              <Button type="submit" className="w-full flex justify-center">
-                Sign Up
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email Address</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="email"
+                        placeholder="projectmayhem@fc.com"
+                        className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="password"
+                        placeholder="***********"
+                        className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? "Signing up..." : "Sign Up"}
               </Button>
-            </div>
-          </form>
+            </form>
+          </Form>
 
           <div className="mt-6">
             <div className="relative">
@@ -131,6 +188,4 @@ const Register = async () => {
       </div>
     </div>
   );
-};
-
-export default Register;
+}

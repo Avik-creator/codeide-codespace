@@ -25,13 +25,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           const user = await User.findOne({ email }).select("+password");
 
           if (!user) {
-            throw new Error("Invalid Email or Password");
+            return { message: "User not found" };
           }
 
           const isMatched = await compare(password, user.password);
 
           if (!isMatched) {
-            throw new Error("Password did not match");
+            return { message: "Password is incorrect" };
           }
 
           return {

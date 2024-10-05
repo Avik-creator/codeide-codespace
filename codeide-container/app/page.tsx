@@ -1,79 +1,130 @@
+"use client";
+
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { login } from "@/action/User";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { getSession } from "@/lib/getSession";
 import { CodeIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 
-const Login = async () => {
-  const session = await getSession();
-  const user = session?.user;
-  if (user) redirect("/dashboard");
+import { useToast } from "@/hooks/use-toast";
+
+interface response {
+  error?: string;
+  success?: boolean;
+}
+
+const formSchema = z.object({
+  email: z.string().email({
+    message: "Please enter a valid email address.",
+  }),
+  password: z.string().min(8, {
+    message: "Password must be at least 8 characters long.",
+  }),
+});
+
+export default function Login() {
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+  const router = useRouter();
+
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      email: "",
+      password: "",
+    },
+  });
+
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    setIsLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append("email", values.email);
+      formData.append("password", values.password);
+
+      const result: response = await login(formData);
+
+      if (result?.error) {
+        toast({
+          title: "Error",
+          description: result.error,
+        });
+      } else if (result?.success) {
+        toast({
+          title: "Success",
+          description: "You have been successfully logged in",
+        });
+        router.push("/dashboard");
+      }
+    } catch (error) {
+      console.error(error);
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-black px-4">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
           <CodeIcon className="mx-auto h-12 w-12 text-primary" />
           <h2 className="mt-6 text-3xl font-extrabold text-gray-900 dark:text-white">Welcome to CodeIDE</h2>
           <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">Sign in to your account</p>
         </div>
-        <div className="mt-8 bg-white dark:bg-gray-800 py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form
-            className="space-y-6"
-            action={async formData => {
-              "use server";
-              await login(formData);
-            }}
-          >
-            <div>
-              <Label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Email Address
-              </Label>
-              <div className="mt-1">
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
-                  placeholder="projectmayhem@fc.com"
-                />
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Password
-              </Label>
-              <div className="mt-1">
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="current-password"
-                  required
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
-                  placeholder="*************"
-                />
-              </div>
-            </div>
-
-            <div>
-              {/* <button
-                type="submit"
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-dark focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
-              >
-                Sign in
-              </button> */}
-              <Button type="submit" className="w-full flex justify-center">
-                Sign In
+        <div className="mt-8 bg-white dark:bg-black py-8 px-4 shadow sm:rounded-lg sm:px-10">
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email Address</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="email"
+                        placeholder="projectmayhem@fc.com"
+                        className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="password"
+                        placeholder="*************"
+                        className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? "Signing in..." : "Sign In"}
               </Button>
-            </div>
-          </form>
+            </form>
+          </Form>
 
           <div className="mt-6">
             <div className="relative">
@@ -98,6 +149,4 @@ const Login = async () => {
       </div>
     </div>
   );
-};
-
-export default Login;
+}
