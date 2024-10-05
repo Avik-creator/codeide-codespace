@@ -8,6 +8,10 @@ import { ZodError } from "zod";
 import connectDB from "./lib/db";
 import { User } from "./models/user";
 
+export const config = {
+  unstable_allowDynamic: ["mongoose/dist/browser.umd.js"],
+};
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   secret: process.env.NEXTAUTH_SECRET as string,
   providers: [

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import CreateSpace from "@/components/createSpace";
 import ListSpaces from "@/components/listSpaces";
 import SignoutButton from "@/components/signoutButton";
@@ -40,7 +40,7 @@ export default function Dashboard() {
     fetchSession();
   }, []);
 
-  const fetchSpaces = async () => {
+  const fetchSpaces = useCallback(async () => {
     if (!session?.user.id) {
       console.log("User ID not available yet");
       return;
@@ -56,13 +56,13 @@ export default function Dashboard() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [session?.user.id]);
 
   useEffect(() => {
     if (session?.user.id) {
       fetchSpaces();
     }
-  }, [session]);
+  }, [session, fetchSpaces]);
 
   return (
     <main className="h-screen py-10 mx-10">

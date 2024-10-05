@@ -14,11 +14,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 
 import { useToast } from "@/hooks/use-toast";
 
-interface response {
-  error?: string;
-  success?: boolean;
-}
-
 const formSchema = z.object({
   email: z.string().email({
     message: "Please enter a valid email address.",
@@ -48,17 +43,17 @@ export default function Login() {
       formData.append("email", values.email);
       formData.append("password", values.password);
 
-      const result: response = await login(formData);
+      const result = await login(formData);
 
-      if (result?.error) {
+      if (result.error) {
         toast({
           title: "Error",
           description: result.error,
         });
-      } else if (result?.success) {
+      } else if (result.success) {
         toast({
           title: "Success",
-          description: "You have been successfully logged in",
+          description: result.message,
         });
         router.push("/dashboard");
       }
